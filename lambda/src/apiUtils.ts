@@ -12,6 +12,9 @@ export const wrapHandler: (handler: WrappedHandler) => Handler = (handler) => as
       statusCode: 200,
       headers: {
         'content-type': 'application/json',
+        'access-control-allow-origin': process.env.ACCESS_CONTROL_ALLOW_ORIGINS || '',
+        'access-control-allow-headers': process.env.ACCESS_CONTROL_ALLOW_HEADERS || '',
+        'access-control-allow-methods': process.env.ACCESS_CONTROL_ALLOW_METHODS || '',
       },
       body: JSON.stringify(result),
     }
@@ -20,6 +23,9 @@ export const wrapHandler: (handler: WrappedHandler) => Handler = (handler) => as
       statusCode: 500,
       headers: {
         'content-type': 'application/json',
+        'access-control-allow-origin': process.env.ACCESS_CONTROL_ALLOW_ORIGINS || '',
+        'access-control-allow-headers': process.env.ACCESS_CONTROL_ALLOW_HEADERS || '',
+        'access-control-allow-methods': process.env.ACCESS_CONTROL_ALLOW_METHODS || '',
       },
       body: JSON.stringify({ error: true, message: e.toString() }),
     }

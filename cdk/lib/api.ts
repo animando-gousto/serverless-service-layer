@@ -8,10 +8,9 @@ import * as targets from '@aws-cdk/aws-route53-targets';
 
 interface Props {
   domainName: string,
+  suffix: string,
 }
 export class Api extends cdk.Construct {
-
-  public readonly endpointUrl: string;
 
   constructor(scope: cdk.Construct, id: string, props: Props) {
     super(scope, id)
@@ -29,7 +28,10 @@ export class Api extends cdk.Construct {
       handler: 'api.handler',
       code: lambda.Code.fromAsset('../lambda/build'),
       environment: {
-        USERS_TABLE_NAME: usersTable.tableName
+        USERS_TABLE_NAME: usersTable.tableName,
+        ACCESS_CONTROL_ALLOW_ORIGINS: apigw.Cors.ALL_ORIGINS.join(','),
+        ACCESS_CONTROL_ALLOW_HEADERS: apigw.Cors.DEFAULT_HEADERS.join(','),
+        ACCESS_CONTROL_ALLOW_METHODS: apigw.Cors.ALL_METHODS.join(','),
       },
     });
     usersTable.grantReadWriteData(handler);
@@ -49,7 +51,14 @@ export class Api extends cdk.Construct {
       domainName: {
         domainName: props.domainName,
         certificate,
-      }
+      },
+      restApiName: `ServiceLayer-${props.suffix}`,
+      defaultCorsPreflightOptions: {
+        allowOrigins: ['http://localhost:3000', `https://*.${process.env.APP_HOST}`],
+        allowHeaders: apigw.Cors.DEFAULT_HEADERS,
+        allowMethods: apigw.Cors.ALL_METHODS,
+        disableCache: true,
+      },
     })
     new route53.ARecord(this, 'CustomDomainAliasRecord', {
       recordName: props.domainName,
@@ -62,7 +71,5 @@ export class Api extends cdk.Construct {
 
     const user = users.addResource('{users}');
     user.addMethod('GET');
-
-    this.endpointUrl = apigateway.url
   }
 }

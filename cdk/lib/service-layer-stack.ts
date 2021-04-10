@@ -15,6 +15,7 @@ export class ServiceLayerStack extends cdk.Stack {
 
     const api = new Api(this, 'Api', {
       domainName: `${props.suffix}.${process.env.HOSTED_ZONE_NAME}`,
+      suffix: props.suffix,
     });
   }
 }
