@@ -1,6 +1,5 @@
 import * as cdk from '@aws-cdk/core';
 import { Api } from './api'
-
 interface StackProps extends cdk.StackProps {
   suffix: string,
 }
@@ -14,6 +13,8 @@ export class ServiceLayerStack extends cdk.Stack {
       description: 'Unique prefix of the s3 bucket',
     })
 
-    const api = new Api(this, 'Api');
+    const api = new Api(this, 'Api', {
+      domainName: `${props.suffix}.${process.env.HOSTED_ZONE_NAME}`,
+    });
   }
 }
