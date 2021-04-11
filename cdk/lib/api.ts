@@ -22,7 +22,6 @@ export class Api extends cdk.Construct {
       },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
-
     const handler = new lambda.Function(this, 'ApiLambda', {
       runtime: lambda.Runtime.NODEJS_10_X,
       handler: 'api.handler',

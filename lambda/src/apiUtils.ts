@@ -1,13 +1,24 @@
 import { Handler } from 'aws-lambda'
 
-import { Request, WrappedHandler } from './types'
+import { Request, WrappedHandler, Params } from './types'
+
+const parseParams = (multiValueParams?: Record<string, Array<string>>): Params => {
+  if (!multiValueParams) {
+    return {}
+  }
+  const keys = Object.keys(multiValueParams)
+  return keys.reduce<Params>((acc, key) => ({
+    ...acc,
+    [key]: multiValueParams[key].length === 1 ? multiValueParams[key][0] : multiValueParams[key],
+  }), {})
+}
 
 export const wrapHandler: <T> (handler: WrappedHandler<T>) => Handler = (handler) => async (event, context, callback) => {
   try {
     console.log({ event })
     const request: Request = {
       path: event.path,
-      params: {},
+      params: parseParams(event.multiValueQueryStringParameters),
       body: event.body ? JSON.parse(event.body) : undefined,
     }
     const result = await handler(request)
