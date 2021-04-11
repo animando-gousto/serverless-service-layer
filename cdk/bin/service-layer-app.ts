@@ -4,7 +4,7 @@ import { ServiceLayerStack } from '../lib/service-layer-stack';
 
 const app = new cdk.App();
 
-const suffix = process.env.SUFFIX || 'default'
+const suffix = process.env.SUFFIX!
 new ServiceLayerStack(app, `ServiceLayer-${suffix}`, {
   suffix,
 });

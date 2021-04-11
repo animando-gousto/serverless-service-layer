@@ -2,10 +2,13 @@ import { Handler } from 'aws-lambda'
 
 import { Request, WrappedHandler } from './types'
 
-export const wrapHandler: (handler: WrappedHandler) => Handler = (handler) => async (event, context, callback) => {
+export const wrapHandler: <T> (handler: WrappedHandler<T>) => Handler = (handler) => async (event, context, callback) => {
   try {
+    console.log({ event })
     const request: Request = {
-      path: event.path
+      path: event.path,
+      params: {},
+      body: event.body ? JSON.parse(event.body) : undefined,
     }
     const result = await handler(request)
     return {
@@ -16,7 +19,7 @@ export const wrapHandler: (handler: WrappedHandler) => Handler = (handler) => as
         'access-control-allow-headers': process.env.ACCESS_CONTROL_ALLOW_HEADERS || '',
         'access-control-allow-methods': process.env.ACCESS_CONTROL_ALLOW_METHODS || '',
       },
-      body: JSON.stringify(result),
+      body: result ? JSON.stringify(result) : undefined,
     }
   } catch (e) {
     return {

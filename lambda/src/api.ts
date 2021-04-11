@@ -1,6 +1,7 @@
 import { Handler } from 'aws-lambda'
 import { wrapHandler } from './apiUtils';
 import { getUsers } from './users'
+import addUser from './users/addUser';
 
 interface HandlerConfig {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -12,7 +13,12 @@ const handlers: Array<HandlerConfig> = [
     method: 'GET',
     path: '/users',
     handler: wrapHandler(getUsers),
-  }
+  },
+  {
+    method: 'POST',
+    path: '/users',
+    handler: wrapHandler(addUser),
+  },
 ]
 
 const getHandler = (event: any) => {
