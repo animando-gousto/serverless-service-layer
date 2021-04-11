@@ -1,20 +1,46 @@
 import { Handler } from 'aws-lambda'
+import { DynamoDB } from 'aws-sdk';
+
+const db = new DynamoDB()
+interface ValidationResult {
+  valid: boolean,
+}
+const validateToken: (token: string) => Promise<ValidationResult> = async (token) => {
+  const result = await db.query({
+    TableName: process.env.TOKEN_TABLE_NAME!,
+    KeyConditionExpression: '#tk = :tk',
+    ExpressionAttributeValues: {
+      ':tk': {
+        S: token
+      }
+    },
+    ExpressionAttributeNames: {
+      '#tk': 'token',
+    },
+  }).promise();
+
+  console.log({
+    validationResult: result
+  })
+
+  const item = result.Items && result.Items.length ? result.Items[0] : undefined;
+
+  console.log({
+    item
+  });
+
+  return {
+    valid: !!item
+  }
+}
 
 export const handler: Handler = async (event) => {
   const { authorizationToken : token } = event;
-  switch (token) {
-    case 'allow':
-      return generatePolicy('user', 'Allow', event.methodArn);
-      break;
-    case 'deny':
-      return generatePolicy('user', 'Deny', event.methodArn);
-      break;
-    case 'unauthorized':
-      throw ("Unauthorized");   // Return a 401 Unauthorized response
-      break;
-    default:
-      throw("Error: Invalid token"); // Return a 500 Invalid token response
+  const validationResult = await validateToken(token)
+  if (validationResult.valid) {
+    return generatePolicy('user', 'Allow', event.methodArn);
   }
+  throw ("Unauthorized");   // Return a 401 Unauthorized response
 }
 
 const generatePolicy = (principalId: string, effect: string, resource: string) => {

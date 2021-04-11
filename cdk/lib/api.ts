@@ -16,15 +16,25 @@ export class Api extends cdk.Construct {
   constructor(scope: cdk.Construct, id: string, props: Props) {
     super(scope, id)
 
+    const tokenTable = new dynamodb.Table(this, 'TokenTable', {
+      partitionKey: {
+        name: 'token',
+        type: dynamodb.AttributeType.STRING,
+      },
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
     const authHandler = new lambda.Function(this, 'AuthLambda', {
       runtime: lambda.Runtime.NODEJS_10_X,
       handler: 'auth.handler',
       code: lambda.Code.fromAsset('../lambda/build'),
+      environment: {
+        TOKEN_TABLE_NAME: tokenTable.tableName,
+      },
     });
     const apiAuthorizer = new apigw.TokenAuthorizer(this, 'ApiAuthorization', {
       handler: authHandler,
       identitySource: apigw.IdentitySource.header('Authorization'),
-      resultsCacheTtl: Duration.minutes(1),
+      resultsCacheTtl: Duration.minutes(10),
     });
 
     const usersTable = new dynamodb.Table(this, 'UsersTable', {
@@ -34,22 +44,45 @@ export class Api extends cdk.Construct {
       },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
-    const handler = new lambda.Function(this, 'ApiLambda', {
+    const getUsersLambda = new lambda.Function(this, 'GetUsersLambda', {
+      runtime: lambda.Runtime.NODEJS_10_X,
+      handler: 'getUsers.handler',
+      code: lambda.Code.fromAsset('../lambda/build'),
+      environment: {
+        USERS_TABLE_NAME: usersTable.tableName,
+      },
+    });
+    const requestTokenLambda = new lambda.Function(this, 'RequestTokenLambda', {
+      runtime: lambda.Runtime.NODEJS_10_X,
+      handler: 'requestToken.handler',
+      code: lambda.Code.fromAsset('../lambda/build'),
+      environment: {
+        TOKEN_TABLE_NAME: tokenTable.tableName,
+      },
+    });
+    const apiLambda = new lambda.Function(this, 'ApiLambda', {
       runtime: lambda.Runtime.NODEJS_10_X,
       handler: 'api.handler',
       code: lambda.Code.fromAsset('../lambda/build'),
       environment: {
         USERS_TABLE_NAME: usersTable.tableName,
+        GET_USERS_FUNCTION_NAME: getUsersLambda.functionName,
+        REQUEST_TOKEN_FUNCTION_NAME: requestTokenLambda.functionName,
         ACCESS_CONTROL_ALLOW_ORIGINS: apigw.Cors.ALL_ORIGINS.join(','),
         ACCESS_CONTROL_ALLOW_HEADERS: apigw.Cors.DEFAULT_HEADERS.join(','),
         ACCESS_CONTROL_ALLOW_METHODS: apigw.Cors.ALL_METHODS.join(','),
       },
     });
-    usersTable.grantReadWriteData(handler);
+    usersTable.grantReadWriteData(apiLambda); // this should go
+    usersTable.grantReadWriteData(getUsersLambda);
+    getUsersLambda.grantInvoke(apiLambda);
+    requestTokenLambda.grantInvoke(apiLambda);
+    tokenTable.grantReadWriteData(requestTokenLambda);
+    tokenTable.grantReadWriteData(authHandler);
 
     const hostedZone = route53.HostedZone.fromHostedZoneAttributes(this, 'Api Hosted Zone', {
-      hostedZoneId: process.env.HOSTED_ZONE_ID || '',
-      zoneName: process.env.HOSTED_ZONE_NAME || '',
+      hostedZoneId: process.env.HOSTED_ZONE_ID!,
+      zoneName: process.env.HOSTED_ZONE_NAME!,
     })
     const certificate = new cert.Certificate(this, 'ApiCertificate', {
       domainName: props.domainName,
@@ -57,7 +90,7 @@ export class Api extends cdk.Construct {
     });
 
     const apigateway = new apigw.LambdaRestApi(this, 'Api', {
-      handler: handler,
+      handler: apiLambda,
       proxy: false,
       domainName: {
         domainName: props.domainName,
@@ -76,6 +109,8 @@ export class Api extends cdk.Construct {
       zone: hostedZone,
       target: route53.RecordTarget.fromAlias(new targets.ApiGateway(apigateway))
     });
+    const token = apigateway.root.addResource('token');
+    token.addMethod('POST');
     const users = apigateway.root.addResource('users');
     users.addMethod('GET', undefined, {
       authorizer: apiAuthorizer

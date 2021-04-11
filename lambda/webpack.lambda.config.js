@@ -4,6 +4,8 @@ module.exports = {
   entry: {
     api: './src/api.ts',
     auth: './src/auth.ts',
+    getUsers: './src/getUsers.ts',
+    requestToken: './src/requestToken.ts',
   },
   output: {
     path: path.resolve(__dirname, 'build'),

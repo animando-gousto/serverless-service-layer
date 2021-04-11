@@ -6,10 +6,10 @@ import { User } from './types'
 const db = new DynamoDB()
 
 const addUser: WrappedHandler<User> = async (request) => {
-  console.log({ request })
   const user: User = {
     firstName: request.body && request.body.firstName,
     surname: request.body && request.body.surname,
+    username: request.body && request.body.username,
     id: uuidv4(),
   }
 

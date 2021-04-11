@@ -1,23 +1,49 @@
 import { Handler } from 'aws-lambda'
+import {Lambda } from 'aws-sdk'
 import { wrapHandler } from './apiUtils';
 import { getUsers } from './users'
+import { User } from './users/types'
+import { WrappedHandler } from './types'
 import addUser from './users/addUser';
+
+const lambda = new Lambda()
 
 interface HandlerConfig {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
   path: string;
   handler: Handler,
 }
+
+const getUsersHandler: WrappedHandler<Array<User>> = async ({ params }) => {
+  const { Payload } = await lambda.invoke({
+      FunctionName: process.env.GET_USERS_FUNCTION_NAME!,
+      Payload: JSON.stringify({query: params.q})
+    }).promise()
+  return JSON.parse(Payload as string).result;
+}
+const requestTokenHandler: WrappedHandler<{ token: string }> = async ({ body }) => {
+  const { username, password } = body
+  const { Payload } = await lambda.invoke({
+      FunctionName: process.env.REQUEST_TOKEN_FUNCTION_NAME!,
+      Payload: JSON.stringify({ username, password })
+    }).promise()
+  return { token: JSON.parse(Payload as string).token };
+}
 const handlers: Array<HandlerConfig> = [
   {
     method: 'GET',
     path: '/users',
-    handler: wrapHandler(getUsers),
+    handler: wrapHandler(getUsersHandler)
   },
   {
     method: 'POST',
     path: '/users',
     handler: wrapHandler(addUser),
+  },
+  {
+    method: 'POST',
+    path: '/token',
+    handler: wrapHandler(requestTokenHandler),
   },
 ]
 
