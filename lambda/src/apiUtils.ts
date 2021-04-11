@@ -2,6 +2,15 @@ import { Handler } from 'aws-lambda'
 
 import { Request, WrappedHandler, Params } from './types'
 
+const getErrorStatus = (e: any): number => {
+  switch (e) {
+    case "Unauthorized":
+      return 401
+    default:
+      return 500
+  }
+}
+
 const parseParams = (multiValueParams?: Record<string, Array<string>>): Params => {
   if (!multiValueParams) {
     return {}
@@ -33,8 +42,9 @@ export const wrapHandler: <T> (handler: WrappedHandler<T>) => Handler = (handler
       body: result ? JSON.stringify(result) : undefined,
     }
   } catch (e) {
+    console.log(e)
     return {
-      statusCode: 500,
+      statusCode: getErrorStatus(e),
       headers: {
         'content-type': 'application/json',
         'access-control-allow-origin': process.env.ACCESS_CONTROL_ALLOW_ORIGINS!,

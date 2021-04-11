@@ -23,6 +23,13 @@ export class Api extends cdk.Construct {
       },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
+    tokenTable.addGlobalSecondaryIndex({
+      indexName: 'username',
+      partitionKey: {
+        name: 'username',
+        type: dynamodb.AttributeType.STRING,
+      }
+    })
     const authHandler = new lambda.Function(this, 'AuthLambda', {
       runtime: lambda.Runtime.NODEJS_10_X,
       handler: 'auth.handler',
@@ -58,6 +65,7 @@ export class Api extends cdk.Construct {
       code: lambda.Code.fromAsset('../lambda/build'),
       environment: {
         TOKEN_TABLE_NAME: tokenTable.tableName,
+        USERS_TABLE_NAME: usersTable.tableName,
       },
     });
     const apiLambda = new lambda.Function(this, 'ApiLambda', {
@@ -74,7 +82,8 @@ export class Api extends cdk.Construct {
       },
     });
     usersTable.grantReadWriteData(apiLambda); // this should go
-    usersTable.grantReadWriteData(getUsersLambda);
+    usersTable.grantReadData(getUsersLambda);
+    usersTable.grantReadData(requestTokenLambda);
     getUsersLambda.grantInvoke(apiLambda);
     requestTokenLambda.grantInvoke(apiLambda);
     tokenTable.grantReadWriteData(requestTokenLambda);

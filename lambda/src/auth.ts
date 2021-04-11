@@ -41,7 +41,7 @@ export const handler: Handler = async (event) => {
   if (validationResult.valid) {
     return generatePolicy('user', 'Allow', event.methodArn);
   }
-  throw ("Unauthorized");   // Return a 401 Unauthorized response
+  throw "Unauthorized";   // Return a 401 Unauthorized response
 }
 
 const generatePolicy = (principalId: string, effect: string, resource: string) => {

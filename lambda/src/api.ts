@@ -22,12 +22,24 @@ const getUsersHandler: WrappedHandler<Array<User>> = async ({ params }) => {
   return JSON.parse(Payload as string).result;
 }
 const requestTokenHandler: WrappedHandler<{ token: string }> = async ({ body }) => {
-  const { username, password } = body
-  const { Payload } = await lambda.invoke({
-      FunctionName: process.env.REQUEST_TOKEN_FUNCTION_NAME!,
-      Payload: JSON.stringify({ username, password })
-    }).promise()
-  return { token: JSON.parse(Payload as string).token };
+  try {
+    const { username, password } = body
+    const response = await lambda.invoke({
+        FunctionName: process.env.REQUEST_TOKEN_FUNCTION_NAME!,
+        Payload: JSON.stringify({ username, password })
+      }).promise()
+
+    console.log('requestToken response', {response})
+    const res = JSON.parse(response.Payload as string)
+    if (res.errorMessage === 'Unauthorized') {
+      throw 'Unauthorized'
+    }
+    return { token: res.token };
+  }
+  catch (err) {
+    console.error(err);
+    throw err;
+  }
 }
 const handlers: Array<HandlerConfig> = [
   {
