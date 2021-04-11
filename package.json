@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "lerna run build --stream",
-    "deploy": "npm run build && lerna run deploy --stream",
+    "deploy": "lerna run deploy --stream",
     "bootstrap": "lerna bootstrap --hoist"
   },
   "repository": {
