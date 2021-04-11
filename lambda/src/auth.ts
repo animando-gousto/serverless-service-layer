@@ -36,6 +36,7 @@ const validateToken: (token: string) => Promise<ValidationResult> = async (token
 
 export const handler: Handler = async (event) => {
   const { authorizationToken : token } = event;
+  console.log('validate token', token)
   const validationResult = await validateToken(token)
   if (validationResult.valid) {
     return generatePolicy('user', 'Allow', event.methodArn);
