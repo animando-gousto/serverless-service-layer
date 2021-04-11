@@ -5,6 +5,7 @@ import * as route53 from '@aws-cdk/aws-route53';
 import * as apigw from '@aws-cdk/aws-apigateway'
 import * as cert from '@aws-cdk/aws-certificatemanager'
 import * as targets from '@aws-cdk/aws-route53-targets';
+import { Duration } from '@aws-cdk/core';
 
 interface Props {
   domainName: string,
@@ -14,6 +15,17 @@ export class Api extends cdk.Construct {
 
   constructor(scope: cdk.Construct, id: string, props: Props) {
     super(scope, id)
+
+    const authHandler = new lambda.Function(this, 'AuthLambda', {
+      runtime: lambda.Runtime.NODEJS_10_X,
+      handler: 'auth.handler',
+      code: lambda.Code.fromAsset('../lambda/build'),
+    });
+    const apiAuthorizer = new apigw.TokenAuthorizer(this, 'ApiAuthorization', {
+      handler: authHandler,
+      identitySource: apigw.IdentitySource.header('Authorization'),
+      resultsCacheTtl: Duration.minutes(1),
+    });
 
     const usersTable = new dynamodb.Table(this, 'UsersTable', {
       partitionKey: {
@@ -65,7 +77,9 @@ export class Api extends cdk.Construct {
       target: route53.RecordTarget.fromAlias(new targets.ApiGateway(apigateway))
     });
     const users = apigateway.root.addResource('users');
-    users.addMethod('GET');
+    users.addMethod('GET', undefined, {
+      authorizer: apiAuthorizer
+    });
     users.addMethod('POST');
 
     const user = users.addResource('{users}');

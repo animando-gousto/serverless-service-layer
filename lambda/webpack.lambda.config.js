@@ -1,10 +1,13 @@
 const path = require('path');
 
 module.exports = {
-  entry: './src/api.ts',
+  entry: {
+    api: './src/api.ts',
+    auth: './src/auth.ts',
+  },
   output: {
     path: path.resolve(__dirname, 'build'),
-    filename: 'api.js',
+    filename: '[name].js',
     library: "index",
     libraryTarget: "umd",
   },
