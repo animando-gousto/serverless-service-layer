@@ -107,7 +107,7 @@ export class Api extends cdk.Construct {
       },
       restApiName: `ServiceLayer-${props.suffix}`,
       defaultCorsPreflightOptions: {
-        allowOrigins: ['http://localhost:3000', `https://*.${process.env.APP_HOST}`],
+        allowOrigins: ['http://localhost:3000', `https://${props.suffix}.${process.env.APP_HOST}`],
         allowHeaders: apigw.Cors.DEFAULT_HEADERS,
         allowMethods: apigw.Cors.ALL_METHODS,
         disableCache: true,
