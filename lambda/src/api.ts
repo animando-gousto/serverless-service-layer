@@ -31,8 +31,8 @@ const requestTokenHandler: WrappedHandler<{ token: string }> = async ({ body }) 
 
     console.log('requestToken response', {response})
     const res = JSON.parse(response.Payload as string)
-    if (res.errorMessage === 'Unauthorized') {
-      throw 'Unauthorized'
+    if (res.errorMessage) {
+      throw res.errorMessage
     }
     return { token: res.token };
   }
