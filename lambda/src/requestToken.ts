@@ -23,7 +23,7 @@ const deleteExisting = async (username: string) => {
     },
   }).promise()
 
-  if (existing.Items) {
+  if (existing.Items && existing.Items.length) {
     console.log('deleting existing', {
       Items: existing.Items
     })
