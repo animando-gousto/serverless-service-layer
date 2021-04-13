@@ -28,7 +28,9 @@ const addUser: WrappedHandler<User> = async (request) => {
     },
   }).promise()
 
-  return user
+  return {
+    body: user
+  }
 }
 
 export default addUser

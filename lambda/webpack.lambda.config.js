@@ -6,6 +6,7 @@ module.exports = {
     auth: './src/auth.ts',
     getUsers: './src/getUsers.ts',
     requestToken: './src/requestToken.ts',
+    validateToken: './src/validateToken.ts',
   },
   output: {
     path: path.resolve(__dirname, 'build'),

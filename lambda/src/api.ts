@@ -1,7 +1,6 @@
 import { Handler } from 'aws-lambda'
 import {Lambda } from 'aws-sdk'
 import { wrapHandler } from './apiUtils';
-import { getUsers } from './users'
 import { User } from './users/types'
 import { WrappedHandler } from './types'
 import addUser from './users/addUser';
@@ -19,8 +18,11 @@ const getUsersHandler: WrappedHandler<Array<User>> = async ({ params }) => {
       FunctionName: process.env.GET_USERS_FUNCTION_NAME!,
       Payload: JSON.stringify({query: params.q})
     }).promise()
-  return JSON.parse(Payload as string).result;
+  return {
+    body: JSON.parse(Payload as string).result,
+  }
 }
+
 const requestTokenHandler: WrappedHandler<{ token: string }> = async ({ body }) => {
   try {
     const { username, password } = body
@@ -34,7 +36,35 @@ const requestTokenHandler: WrappedHandler<{ token: string }> = async ({ body }) 
     if (res.errorMessage) {
       throw res.errorMessage
     }
-    return { token: res.token };
+    return {
+      body: { token: res.token },
+      cookies: [
+        `token=${res.token}; Domain=animando.co.uk; Secure; SameSite=None`
+      ]
+    };
+  }
+  catch (err) {
+    console.error(err);
+    throw err;
+  }
+}
+
+const validateTokenHandler: WrappedHandler<{ valid: boolean }> = async ({ params }) => {
+  try {
+    const { token } = params
+    const response = await lambda.invoke({
+        FunctionName: process.env.VALIDATE_TOKEN_FUNCTION_NAME!,
+        Payload: JSON.stringify({ token })
+      }).promise()
+
+    console.log('validateToken response', { response })
+    const res = JSON.parse(response.Payload as string)
+    if (res.errorMessage) {
+      throw res.errorMessage
+    }
+    return {
+      body: { valid: res.valid },
+    };
   }
   catch (err) {
     console.error(err);
@@ -57,6 +87,11 @@ const handlers: Array<HandlerConfig> = [
     path: '/token',
     handler: wrapHandler(requestTokenHandler),
   },
+  {
+    method: 'GET',
+    path: '/token/validate',
+    handler: wrapHandler(validateTokenHandler),
+  },
 ]
 
 const getHandler = (event: any) => {
@@ -65,7 +100,6 @@ const getHandler = (event: any) => {
 }
 
 export const handler: Handler = async (event, context, callback) => {
-  console.log('request', JSON.stringify(event, null, 2))
   const matchingHandler = getHandler(event);
   if (matchingHandler) {
     return await matchingHandler(event, context, callback);

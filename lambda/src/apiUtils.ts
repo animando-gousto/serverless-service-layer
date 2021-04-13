@@ -23,23 +23,33 @@ const parseParams = (multiValueParams?: Record<string, Array<string>>): Params =
 }
 
 export const wrapHandler: <T> (handler: WrappedHandler<T>) => Handler = (handler) => async (event, context, callback) => {
+  console.log({
+    event,
+  })
   try {
-    console.log({ event })
     const request: Request = {
       path: event.path,
       params: parseParams(event.multiValueQueryStringParameters),
       body: event.body ? JSON.parse(event.body) : undefined,
     }
-    const result = await handler(request)
+    const { body, headers, cookies } = await handler(request)
     return {
       statusCode: 200,
       headers: {
+        ...headers,
         'content-type': 'application/json',
-        'access-control-allow-origin': process.env.ACCESS_CONTROL_ALLOW_ORIGINS!,
+        'access-control-allow-origin': event.headers.origin,
         'access-control-allow-headers': process.env.ACCESS_CONTROL_ALLOW_HEADERS!,
-        'access-control-allow-methods': process.env.ACCESS_CONTROL_ALLOW_METHODS!,
+        'access-control-allow-methods': event.headers.httpMethod,
+        'access-control-allow-credentials': 'true',
+
       },
-      body: result ? JSON.stringify(result) : undefined,
+      ...(cookies ? ({
+        multiValueHeaders: {
+          'Set-Cookie': cookies,
+        },
+      }) : undefined),
+      body: body ? JSON.stringify(body) : undefined,
     }
   } catch (e) {
     console.log(e)
@@ -47,9 +57,10 @@ export const wrapHandler: <T> (handler: WrappedHandler<T>) => Handler = (handler
       statusCode: getErrorStatus(e),
       headers: {
         'content-type': 'application/json',
-        'access-control-allow-origin': process.env.ACCESS_CONTROL_ALLOW_ORIGINS!,
+        'access-control-allow-origin': event.headers.origin,
         'access-control-allow-headers': process.env.ACCESS_CONTROL_ALLOW_HEADERS!,
-        'access-control-allow-methods': process.env.ACCESS_CONTROL_ALLOW_METHODS!,
+        'access-control-allow-methods': event.headers.httpMethod,
+        'access-control-allow-credentials': 'true',
       },
       body: JSON.stringify({ error: true, message: e.toString() }),
     }

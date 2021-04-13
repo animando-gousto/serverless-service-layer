@@ -68,6 +68,14 @@ export class Api extends cdk.Construct {
         USERS_TABLE_NAME: usersTable.tableName,
       },
     });
+    const validateTokenLambda = new lambda.Function(this, 'ValidateTokenLambda', {
+      runtime: lambda.Runtime.NODEJS_10_X,
+      handler: 'validateToken.handler',
+      code: lambda.Code.fromAsset('../lambda/build'),
+      environment: {
+        TOKEN_TABLE_NAME: tokenTable.tableName,
+      },
+    });
     const apiLambda = new lambda.Function(this, 'ApiLambda', {
       runtime: lambda.Runtime.NODEJS_10_X,
       handler: 'api.handler',
@@ -76,6 +84,7 @@ export class Api extends cdk.Construct {
         USERS_TABLE_NAME: usersTable.tableName,
         GET_USERS_FUNCTION_NAME: getUsersLambda.functionName,
         REQUEST_TOKEN_FUNCTION_NAME: requestTokenLambda.functionName,
+        VALIDATE_TOKEN_FUNCTION_NAME: validateTokenLambda.functionName,
         ACCESS_CONTROL_ALLOW_ORIGINS: apigw.Cors.ALL_ORIGINS.join(','),
         ACCESS_CONTROL_ALLOW_HEADERS: apigw.Cors.DEFAULT_HEADERS.join(','),
         ACCESS_CONTROL_ALLOW_METHODS: apigw.Cors.ALL_METHODS.join(','),
@@ -86,7 +95,9 @@ export class Api extends cdk.Construct {
     usersTable.grantReadData(requestTokenLambda);
     getUsersLambda.grantInvoke(apiLambda);
     requestTokenLambda.grantInvoke(apiLambda);
+    validateTokenLambda.grantInvoke(apiLambda);
     tokenTable.grantReadWriteData(requestTokenLambda);
+    tokenTable.grantReadData(validateTokenLambda);
     tokenTable.grantReadWriteData(authHandler);
 
     const hostedZone = route53.HostedZone.fromHostedZoneAttributes(this, 'Api Hosted Zone', {
@@ -111,6 +122,7 @@ export class Api extends cdk.Construct {
         allowHeaders: apigw.Cors.DEFAULT_HEADERS,
         allowMethods: apigw.Cors.ALL_METHODS,
         disableCache: true,
+        allowCredentials: true,
       },
     })
     new route53.ARecord(this, 'CustomDomainAliasRecord', {
@@ -119,6 +131,7 @@ export class Api extends cdk.Construct {
       target: route53.RecordTarget.fromAlias(new targets.ApiGateway(apigateway))
     });
     const token = apigateway.root.addResource('token');
+    token.addResource('validate').addMethod('GET');
     token.addMethod('POST');
     const users = apigateway.root.addResource('users');
     users.addMethod('GET', undefined, {
