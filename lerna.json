@@ -3,7 +3,8 @@
   "npmClient": "npm",
   "command": {
     "build": {},
-    "deploy": {}
+    "deploy": {},
+    "destroy": {}
   },
   "packages": ["cdk", "lambda"]
 }

@@ -8,7 +8,8 @@
     "watch": "tsc -w",
     "build": "tsc",
     "deploy:local": "SUFFIX=local npm run deploy",
-    "deploy": "cdk deploy --parameters bucketPrefix=animandogousto --require-approval=never --outputs-file ./config.json"
+    "deploy": "cdk deploy --parameters bucketPrefix=animandogousto --require-approval=never --outputs-file ./config.json",
+    "destroy": "cdk destroy -f"
   },
   "keywords": [],
   "author": "",
