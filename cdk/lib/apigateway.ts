@@ -34,7 +34,7 @@ export class ApiGateway extends cdk.Construct {
       handler: props.lambdas.apiLambda,
       proxy: false,
       domainName: {
-        domainName: `${props.domainName}-migration`,
+        domainName: `migration.${props.domainName}`,
         certificate,
       },
       restApiName: `ServiceLayer-${props.suffix}`,
