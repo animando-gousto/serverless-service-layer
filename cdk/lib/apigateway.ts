@@ -26,7 +26,7 @@ export class ApiGateway extends cdk.Construct {
       zoneName: process.env.HOSTED_ZONE_NAME!,
     })
     const certificate = new cert.Certificate(this, 'ApiCertificate', {
-      domainName: props.domainName,
+      domainName: `migration-${props.domainName}`,
       validation: cert.CertificateValidation.fromDns(hostedZone)
     });
 
@@ -47,7 +47,7 @@ export class ApiGateway extends cdk.Construct {
       },
     })
     new route53.ARecord(this, 'CustomDomainAliasRecord', {
-      recordName: props.domainName,
+      recordName: `migration-${props.domainName}`,
       zone: hostedZone,
       target: route53.RecordTarget.fromAlias(new targets.ApiGateway(this.apiProxy))
     });
