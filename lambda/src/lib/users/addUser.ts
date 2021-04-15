@@ -1,6 +1,6 @@
 import { DynamoDB } from 'aws-sdk';
 import { CreateUser, User } from './types'
-import hashPassword from '../lib/auth/hashPassword'
+import hashPassword from '../../lib/auth/hashPassword'
 
 const db = new DynamoDB()
 

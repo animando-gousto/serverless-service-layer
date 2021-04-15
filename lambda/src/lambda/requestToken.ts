@@ -3,8 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { DynamoDB } from 'aws-sdk';
 import crypto from 'crypto'
 import moment from 'moment';
-
-const TIMESTAMP_FORMAT = 'YYYY-MM-DD HH:MM:SS.sss'
+import { TIMESTAMP_FORMAT } from '../lib/constants/time';
 
 const dynamodb = new DynamoDB()
 

@@ -1,14 +1,17 @@
 const path = require('path');
+const fs = require('fs')
+
+const lambdaSrc = './src/lambda'
+const entry = fs.readdirSync(path.resolve(__dirname, lambdaSrc)).reduce((acc, f) => {
+  const name = f.substring(0, f.lastIndexOf('.'))
+  return {
+    ...acc,
+    [name]: `${lambdaSrc}/${f}`
+  }
+}, {})
 
 module.exports = {
-  entry: {
-    api: './src/api.ts',
-    auth: './src/auth.ts',
-    addUser: './src/addUser.ts',
-    getUsers: './src/getUsers.ts',
-    requestToken: './src/requestToken.ts',
-    validateToken: './src/validateToken.ts',
-  },
+  entry,
   output: {
     path: path.resolve(__dirname, 'build'),
     filename: '[name].js',

@@ -1,14 +1,8 @@
 import { Handler } from 'aws-lambda'
 import { DynamoDB, } from 'aws-sdk';
-import moment from 'moment'
-
-const TIMESTAMP_FORMAT = 'YYYY-MM-DD HH:MM:SS.sss'
+import checkTokenExpiry from '../lib/auth/checkTokenExpiry'
 
 const dynamodb = new DynamoDB()
-
-const checkExpiry = async (item: DynamoDB.AttributeMap) => {
-  return moment(item.expiry.S).isAfter(moment())
-}
 
 const validateToken = async (token: string): Promise<boolean> => {
   const existing = await dynamodb.query({
@@ -30,7 +24,7 @@ const validateToken = async (token: string): Promise<boolean> => {
       Items: existing.Items
     })
 
-    return await checkExpiry(existing.Items[0])
+    return await checkTokenExpiry(existing.Items[0])
   }
   return false
 }

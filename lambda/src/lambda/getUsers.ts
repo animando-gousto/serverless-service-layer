@@ -1,5 +1,5 @@
 import { Handler } from 'aws-lambda'
-import { getUsers } from './users'
+import { getUsers } from '../lib/users'
 
 export const handler: Handler = async (event, context, callback) => {
   return {

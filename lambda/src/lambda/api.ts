@@ -1,8 +1,8 @@
 import { Handler } from 'aws-lambda'
 import {Lambda } from 'aws-sdk'
-import { wrapHandler } from './apiUtils';
-import { User } from './users/types'
-import { WrappedHandler } from './types'
+import { wrapHandler } from '../lib/api/apiUtils';
+import { User } from '../lib/users/types'
+import { WrappedHandler } from '../lib/api/types'
 
 const lambda = new Lambda()
 
