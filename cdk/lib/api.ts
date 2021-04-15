@@ -21,18 +21,23 @@ export class Api extends cdk.Construct {
   constructor(scope: cdk.Construct, id: string, props: Props) {
     super(scope, id)
 
-    const apigw = new ApiGateway(this, 'ApiGateway', {
+    const apigateway = new ApiGateway(this, 'ApiGateway', {
       lambdas: props.lambdas,
       suffix: props.suffix,
       domainName: props.domainName,
     })
+    const apiAuthorizer = new apigw.TokenAuthorizer(this, 'ApiAuthorization', {
+      handler: props.lambdas.authHandler,
+      identitySource: apigw.IdentitySource.header('Authorization'),
+      resultsCacheTtl: Duration.minutes(10),
+    });
 
-    const token = apigw.apiProxy.root.addResource('token');
+    const token = apigateway.apiProxy.root.addResource('token');
     token.addResource('validate').addMethod('GET');
     token.addMethod('POST');
-    const users = apigw.apiProxy.root.addResource('users');
+    const users = apigateway.apiProxy.root.addResource('users');
     users.addMethod('GET', undefined, {
-      authorizer: props.lambdas.apiAuthorizer
+      authorizer: apiAuthorizer
     });
     users.addMethod('POST');
 

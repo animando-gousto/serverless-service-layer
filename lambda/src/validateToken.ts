@@ -12,7 +12,8 @@ const checkExpiry = async (item: DynamoDB.AttributeMap) => {
 
 const validateToken = async (token: string): Promise<boolean> => {
   const existing = await dynamodb.query({
-    TableName: process.env.TOKEN_TABLE_NAME!,
+    TableName: process.env.MASTER_TABLE_NAME!,
+    IndexName: 'user-token',
     KeyConditionExpression: '#token = :token',
     ExpressionAttributeNames: {
       '#token': 'token',

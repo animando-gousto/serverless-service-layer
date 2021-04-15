@@ -14,7 +14,6 @@ interface Props {
 export class Lambda extends cdk.Construct {
 
   public readonly authHandler
-  public readonly apiAuthorizer
   public readonly getUsersLambda
   public readonly requestTokenLambda
   public readonly validateTokenLambda
@@ -29,12 +28,8 @@ export class Lambda extends cdk.Construct {
       code: lambda.Code.fromAsset('../lambda/build'),
       environment: {
         TOKEN_TABLE_NAME: props.db.tokenTable.tableName,
+        MASTER_TABLE_NAME: props.db.masterTable.tableName,
       },
-    });
-    this.apiAuthorizer = new apigw.TokenAuthorizer(this, 'ApiAuthorization', {
-      handler: this.authHandler,
-      identitySource: apigw.IdentitySource.header('Authorization'),
-      resultsCacheTtl: Duration.minutes(10),
     });
 
     this.getUsersLambda = new lambda.Function(this, 'GetUsersLambda', {
@@ -52,6 +47,7 @@ export class Lambda extends cdk.Construct {
       environment: {
         TOKEN_TABLE_NAME: props.db.tokenTable.tableName,
         USERS_TABLE_NAME: props.db.usersTable.tableName,
+        MASTER_TABLE_NAME: props.db.masterTable.tableName,
       },
     });
     this.validateTokenLambda = new lambda.Function(this, 'ValidateTokenLambda', {
@@ -60,6 +56,7 @@ export class Lambda extends cdk.Construct {
       code: lambda.Code.fromAsset('../lambda/build'),
       environment: {
         TOKEN_TABLE_NAME: props.db.tokenTable.tableName,
+        MASTER_TABLE_NAME: props.db.masterTable.tableName,
       },
     });
     this.apiLambda = new lambda.Function(this, 'ApiLambda', {
@@ -76,14 +73,22 @@ export class Lambda extends cdk.Construct {
         ACCESS_CONTROL_ALLOW_METHODS: apigw.Cors.ALL_METHODS.join(','),
       },
     });
-    props.db.usersTable.grantReadWriteData(this.apiLambda); // this should go
-    props.db.usersTable.grantReadData(this.getUsersLambda);
-    props.db.usersTable.grantReadData(this.requestTokenLambda);
     this.getUsersLambda.grantInvoke(this.apiLambda);
     this.requestTokenLambda.grantInvoke(this.apiLambda);
     this.validateTokenLambda.grantInvoke(this.apiLambda);
+
+    props.db.usersTable.grantReadWriteData(this.apiLambda); // this should go
+    props.db.usersTable.grantReadData(this.getUsersLambda);
+    props.db.usersTable.grantReadData(this.requestTokenLambda);
+
     props.db.tokenTable.grantReadWriteData(this.requestTokenLambda);
     props.db.tokenTable.grantReadData(this.validateTokenLambda);
     props.db.tokenTable.grantReadWriteData(this.authHandler);
+
+    props.db.masterTable.grantReadData(this.authHandler);
+    props.db.masterTable.grantReadWriteData(this.requestTokenLambda);
+    props.db.masterTable.grantReadData(this.validateTokenLambda);
+    props.db.masterTable.grantReadData(this.getUsersLambda);
+    props.db.masterTable.grantReadData(this.getUsersLambda);
   }
 }
