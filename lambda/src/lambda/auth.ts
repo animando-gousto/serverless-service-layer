@@ -1,6 +1,6 @@
 import { Handler } from 'aws-lambda'
 import { DynamoDB } from 'aws-sdk';
-import checkTokenExpiry from '../lib/auth/checkTokenExpiry'
+import checkAndRefreshToken from '../lib/auth/checkAndRefreshToken';
 
 const db = new DynamoDB()
 
@@ -19,14 +19,7 @@ const validateToken: (token: string) => Promise<boolean> = async (token) => {
     },
   }).promise();
 
-  if (existing.Items && existing.Items.length) {
-    console.log('found existing', {
-      Items: existing.Items
-    })
-
-    return await checkTokenExpiry(existing.Items[0])
-  }
-  return false
+  return await checkAndRefreshToken(existing)
 }
 
 export const handler: Handler = async (event) => {

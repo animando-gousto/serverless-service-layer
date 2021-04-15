@@ -79,9 +79,9 @@ export class Lambda extends cdk.Construct {
     this.validateTokenLambda.grantInvoke(this.apiLambda);
     this.addUserLambda.grantInvoke(this.apiLambda);
 
-    props.db.masterTable.grantReadData(this.authHandler);
+    props.db.masterTable.grantReadWriteData(this.authHandler);
     props.db.masterTable.grantReadWriteData(this.requestTokenLambda);
-    props.db.masterTable.grantReadData(this.validateTokenLambda);
+    props.db.masterTable.grantReadWriteData(this.validateTokenLambda);
     props.db.masterTable.grantReadData(this.getUsersLambda);
     props.db.masterTable.grantReadWriteData(this.addUserLambda);
   }
