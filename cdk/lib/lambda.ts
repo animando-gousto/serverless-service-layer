@@ -10,6 +10,7 @@ export class Lambda extends cdk.Construct {
 
   public readonly authHandler
   public readonly getUsersLambda
+  public readonly addUserLambda
   public readonly requestTokenLambda
   public readonly validateTokenLambda
   public readonly apiLambda
@@ -29,6 +30,14 @@ export class Lambda extends cdk.Construct {
     this.getUsersLambda = new lambda.Function(this, 'GetUsersLambda', {
       runtime: lambda.Runtime.NODEJS_10_X,
       handler: 'getUsers.handler',
+      code: lambda.Code.fromAsset('../lambda/build'),
+      environment: {
+        MASTER_TABLE_NAME: props.db.masterTable.tableName,
+      },
+    });
+    this.addUserLambda = new lambda.Function(this, 'AddUserLambda', {
+      runtime: lambda.Runtime.NODEJS_10_X,
+      handler: 'addUser.handler',
       code: lambda.Code.fromAsset('../lambda/build'),
       environment: {
         MASTER_TABLE_NAME: props.db.masterTable.tableName,
@@ -55,6 +64,8 @@ export class Lambda extends cdk.Construct {
       handler: 'api.handler',
       code: lambda.Code.fromAsset('../lambda/build'),
       environment: {
+        MASTER_TABLE_NAME: props.db.masterTable.tableName,
+        ADD_USER_FUNCTION_NAME: this.addUserLambda.functionName,
         GET_USERS_FUNCTION_NAME: this.getUsersLambda.functionName,
         REQUEST_TOKEN_FUNCTION_NAME: this.requestTokenLambda.functionName,
         VALIDATE_TOKEN_FUNCTION_NAME: this.validateTokenLambda.functionName,
@@ -66,11 +77,12 @@ export class Lambda extends cdk.Construct {
     this.getUsersLambda.grantInvoke(this.apiLambda);
     this.requestTokenLambda.grantInvoke(this.apiLambda);
     this.validateTokenLambda.grantInvoke(this.apiLambda);
+    this.addUserLambda.grantInvoke(this.apiLambda);
 
     props.db.masterTable.grantReadData(this.authHandler);
     props.db.masterTable.grantReadWriteData(this.requestTokenLambda);
     props.db.masterTable.grantReadData(this.validateTokenLambda);
     props.db.masterTable.grantReadData(this.getUsersLambda);
-    props.db.masterTable.grantReadData(this.getUsersLambda);
+    props.db.masterTable.grantReadWriteData(this.addUserLambda);
   }
 }

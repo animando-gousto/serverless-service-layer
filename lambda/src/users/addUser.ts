@@ -1,16 +1,14 @@
 import { DynamoDB } from 'aws-sdk';
-import { v4 as uuidv4 } from 'uuid';
-import { WrappedHandler } from '../types'
-import { User } from './types'
+import { CreateUser, User } from './types'
+import hashPassword from '../lib/auth/hashPassword'
 
 const db = new DynamoDB()
 
-const addUser: WrappedHandler<User> = async (request) => {
-  const user: User = {
-    firstName: request.body && request.body.firstName,
-    surname: request.body && request.body.surname,
-    username: request.body && request.body.username,
-  }
+const addUser: (user: CreateUser) => Promise<User> = async (user: CreateUser) => {
+
+  const { password: rawPassword, ...restUser } = user
+
+  const password = hashPassword(user.username, rawPassword)
 
   await db.putItem({
     TableName: process.env.MASTER_TABLE_NAME!,
@@ -30,12 +28,13 @@ const addUser: WrappedHandler<User> = async (request) => {
       username: {
         S: user.username
       },
+      password: {
+        S: password
+      },
     },
   }).promise()
 
-  return {
-    body: user
-  }
+  return restUser
 }
 
 export default addUser

@@ -3,7 +3,6 @@ import {Lambda } from 'aws-sdk'
 import { wrapHandler } from './apiUtils';
 import { User } from './users/types'
 import { WrappedHandler } from './types'
-import addUser from './users/addUser';
 
 const lambda = new Lambda()
 
@@ -11,6 +10,16 @@ interface HandlerConfig {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
   path: string;
   handler: Handler,
+}
+
+const addUserHandler: WrappedHandler<User> = async ({ body }) => {
+  const { Payload } = await lambda.invoke({
+      FunctionName: process.env.ADD_USER_FUNCTION_NAME!,
+      Payload: JSON.stringify(body)
+    }).promise()
+  return {
+    body: JSON.parse(Payload as string).result,
+  }
 }
 
 const getUsersHandler: WrappedHandler<Array<User>> = async ({ params }) => {
@@ -31,7 +40,6 @@ const requestTokenHandler: WrappedHandler<{ token: string }> = async ({ body }) 
         Payload: JSON.stringify({ username, password })
       }).promise()
 
-    console.log('requestToken response', {response})
     const res = JSON.parse(response.Payload as string)
     if (res.errorMessage) {
       throw res.errorMessage
@@ -80,7 +88,7 @@ const handlers: Array<HandlerConfig> = [
   {
     method: 'POST',
     path: '/users',
-    handler: wrapHandler(addUser),
+    handler: wrapHandler(addUserHandler),
   },
   {
     method: 'POST',

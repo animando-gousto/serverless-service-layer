@@ -4,6 +4,7 @@ module.exports = {
   entry: {
     api: './src/api.ts',
     auth: './src/auth.ts',
+    addUser: './src/addUser.ts',
     getUsers: './src/getUsers.ts',
     requestToken: './src/requestToken.ts',
     validateToken: './src/validateToken.ts',
