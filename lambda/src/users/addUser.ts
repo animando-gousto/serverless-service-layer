@@ -10,20 +10,25 @@ const addUser: WrappedHandler<User> = async (request) => {
     firstName: request.body && request.body.firstName,
     surname: request.body && request.body.surname,
     username: request.body && request.body.username,
-    id: uuidv4(),
   }
 
   await db.putItem({
-    TableName: process.env.USERS_TABLE_NAME!,
+    TableName: process.env.MASTER_TABLE_NAME!,
     Item: {
-      id: {
-        S: user.id,
+      PK: {
+        S: `USER#${user.username}`
+      },
+      SK: {
+        S: `USER#${user.username}`
       },
       firstName: {
         S: user.firstName,
       },
       surname: {
         S: user.surname
+      },
+      username: {
+        S: user.username
       },
     },
   }).promise()
